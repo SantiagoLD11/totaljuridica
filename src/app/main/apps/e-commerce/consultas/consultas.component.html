@@ -1,0 +1,127 @@
+<div id="orders" class="page-layout carded fullwidth inner-scroll">
+
+    <!-- TOP BACKGROUND -->
+    <div class="top-bg accent"></div>
+    <!-- / TOP BACKGROUND -->
+
+    <!-- CENTER -->
+    <div class="center">
+
+        <!-- HEADER -->
+        <div class="header accent"
+             fxLayout="column" fxLayoutAlign="center center"
+             fxLayout.gt-xs="row" fxLayoutAlign.gt-xs="space-between center">
+
+            <!-- APP TITLE -->
+            <div class="logo mb-24 mb-sm-0"
+                 fxLayout="row" fxLayoutAlign="start center">
+                 <div class="logo">
+                    <img class="logo-icon" src="assets/images/logos/asso.png">
+                    <span class="logo-text secondary-text">Impel HC</span>
+                </div>
+            </div>
+            <!-- / APP TITLE -->
+        
+            <div class="logo mb-24 mb-sm-0"
+                 fxLayout="column" fxLayoutAlign="start center">
+                <span class="h2" [@animate]="{value:'*',params:{delay:'100ms',x:'-25px'}}">{{nombre}}</span>
+                <span class="subtitle secondary-text" [@animate]="{value:'*',params:{delay:'100ms',x:'-25px'}}">{{cc}}</span>
+                <span class="subtitle secondary-text" [@animate]="{value:'*',params:{delay:'100ms',x:'-25px'}}">{{email}}</span>
+            </div>
+
+            <!-- SEARCH -->
+            <div class="search-wrapper  ml-sm-32">
+                <div class="search" fxFlex fxLayout="row" fxLayoutAlign="start center">
+                    <mat-icon>search</mat-icon>
+                    <input #filter placeholder="Buscar una consulta">
+                </div>
+            </div>
+
+            <div class="logo mb-24 mb-sm-0" fxLayout="column" fxLayoutAlign="start center">
+                <div class="logo">
+                    <button mat-icon-button class="close-button" (click)="logout()">
+                        <mat-icon>exit_to_app</mat-icon>
+                    </button>
+               </div>
+           </div>
+        </div>
+        
+        <!-- / HEADER -->
+
+        <!-- CONTENT CARD -->
+        <div class="content-card">
+
+            <mat-table class="orders-table"
+                       #table [dataSource]="dataSource"
+                       matSort
+                       [@animateStagger]="{value:'50'}"
+                       fusePerfectScrollbar>
+
+                <!-- ID Column -->
+                <ng-container matColumnDef="id">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header>ID</mat-header-cell>
+                    <mat-cell *matCellDef="let order">
+                        <p class="text-truncate">{{order.id}}</p>
+                    </mat-cell>
+                </ng-container>
+
+                <!-- Reference Column -->
+                <ng-container matColumnDef="secuencia">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header>Secuencia</mat-header-cell>
+                    <mat-cell *matCellDef="let order">
+                        <p class="text-truncate">{{order.secuencia}}</p>
+                    </mat-cell>
+                </ng-container>
+
+                <!-- Name Column -->
+                <ng-container matColumnDef="perfil">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header>Perfil</mat-header-cell>
+                    <mat-cell *matCellDef="let order">
+                        <p class="text">
+                            {{order.perfil}}
+                        </p>
+                    </mat-cell>
+                </ng-container>
+
+                
+                <!-- Payment Column -->
+                <ng-container matColumnDef="fecha">
+                    <mat-header-cell *matHeaderCellDef mat-sort-header>Fecha de cita</mat-header-cell>
+                    <mat-cell *matCellDef="let order">
+                        <p class="text-truncate">
+                            {{order.fecha}}
+                        </p>
+                    </mat-cell>
+                </ng-container>
+
+                <!-- Type Column -->
+                <ng-container matColumnDef="url">
+                    <mat-header-cell *matHeaderCellDef>Documento</mat-header-cell>
+                    <mat-cell *matCellDef="let order">
+                        <a *ngIf="order.url != null" class="nav-link" href="{{order.url}}" target="_blank">
+                            <span>Ver</span>
+                        </a>
+                    </mat-cell>
+                </ng-container>
+
+                <mat-header-row *matHeaderRowDef="displayedColumns; sticky:true"></mat-header-row>
+
+                <mat-row *matRowDef="let order; columns: displayedColumns;"
+                         class="order"
+                         matRipple
+                         [routerLink]="'/apps/e-commerce/orders/'+order.id">
+                </mat-row>
+            </mat-table>
+
+            <mat-paginator #paginator
+                           [length]="dataSource.filteredData.length"
+                           [pageIndex]="0"
+                           [pageSize]="10"
+                           [pageSizeOptions]="[5, 10, 25, 100]">
+            </mat-paginator>
+
+        </div>
+        <!-- / CONTENT CARD -->
+    </div>
+    <!-- / CENTER -->
+</div>

@@ -1,0 +1,226 @@
+<div id="forms" class="page-layout simple fullwidth" fxLayout="column">
+
+    <!-- HEADER -->
+    <div class="header accent p-24 h-160" fxLayout="row" fxLayoutAlign="start center">
+        <div fxLayout="column" fxLayoutAlign="center start">
+            <div fxLayout="row" fxLayoutAlign="start center">
+                <mat-icon class="secondary-text s-18">home</mat-icon>
+                <mat-icon class="secondary-text s-16">chevron_right</mat-icon>
+                <span class="secondary-text">User Interface</span>
+            </div>
+            <div class="h1 mt-16">Forms</div>
+        </div>
+    </div>
+    <!-- / HEADER -->
+
+    <!-- CONTENT -->
+    <div class="content p-24">
+
+        <div class="h1">
+            Reactive Forms
+        </div>
+
+        <p class="pt-16 pb-32">
+            Angular reactive forms facilitate a reactive style of programming that favors explicit management of the
+            data flowing between a non-UI data model (typically retrieved from a server) and a UI-oriented form model
+            that retains the states and values of the HTML controls on screen. Reactive forms offer the ease of using
+            reactive patterns, testing, and validation.
+        </p>      
+        <div class="vertical-stepper-wrapper">
+
+            <!-- VERTICAL STEPPER EXAMPLE -->
+            <mat-vertical-stepper class="mat-elevation-z4" [linear]="true">
+
+                <mat-step [stepControl]="verticalStepperStep1">
+
+                    <form fxLayout="column" [formGroup]="verticalStepperStep1">
+
+                        <ng-template matStepLabel>Fill out your name</ng-template>
+
+                        <div fxFlex="1 0 auto" fxLayout="column">
+
+                            <mat-form-field appearance="outline" fxFlex="100">
+                                <mat-label>Country</mat-label>
+                                <mat-select formControlName="firstName" required>
+                                    <mat-option [value]="'United States of America'">
+                                        United States of America
+                                    </mat-option>
+                                    <mat-option [value]="'United Kingdom'">
+                                        United Kingdom
+                                    </mat-option>
+                                    <mat-option [value]="'Russia'">
+                                        Russia
+                                    </mat-option>
+                                    <mat-option [value]="'China'">
+                                        China
+                                    </mat-option>
+                                    <mat-option [value]="'Japan'">
+                                        Japan
+                                    </mat-option>
+                                    <mat-option [value]="'Turkey'">
+                                        Turkey
+                                    </mat-option>
+                                </mat-select>
+                                <mat-icon matSuffix class="secondary-text">outlined_flag</mat-icon>
+                                <mat-error>Country is required!</mat-error>
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline" fxFlex="100">
+                                <mat-label>Country</mat-label>
+                                <mat-select formControlName="lastName" required>
+                                    <mat-option [value]="'United States of America'">
+                                        United States of America
+                                    </mat-option>
+                                    <mat-option [value]="'United Kingdom'">
+                                        United Kingdom
+                                    </mat-option>
+                                    <mat-option [value]="'Russia'">
+                                        Russia
+                                    </mat-option>
+                                    <mat-option [value]="'China'">
+                                        China
+                                    </mat-option>
+                                    <mat-option [value]="'Japan'">
+                                        Japan
+                                    </mat-option>
+                                    <mat-option [value]="'Turkey'">
+                                        Turkey
+                                    </mat-option>
+                                </mat-select>
+                                <mat-icon matSuffix class="secondary-text">outlined_flag</mat-icon>
+                                <mat-error>Country is required!</mat-error>
+                            </mat-form-field>
+
+                        </div>
+
+                        <div fxLayout="row" fxLayoutAlign="center center">
+                            <button mat-raised-button matStepperNext type="button" color="accent">
+                                Next
+                            </button>
+                        </div>
+
+                    </form>
+
+                </mat-step>
+
+                <mat-step [stepControl]="verticalStepperStep2">
+
+                        <div [ngSwitch]="view">
+                            <mwl-calendar-month-view *ngSwitchCase="'month'" [viewDate]="viewDate" [events]="events"
+                                [refresh]="refresh" [activeDayIsOpen]="activeDayIsOpen"
+                                (dayClicked)="dayClicked($event.day)" (eventClicked)="editEvent('edit', $event.event)"
+                                (eventTimesChanged)="eventTimesChanged($event)"
+                                (beforeViewRender)="beforeMonthViewRender($event)">
+                            </mwl-calendar-month-view>
+                            <mwl-calendar-week-view *ngSwitchCase="'week'" [viewDate]="viewDate" [events]="events"
+                                [refresh]="refresh" (eventClicked)="editEvent('edit', $event.event)"
+                                (eventTimesChanged)="eventTimesChanged($event)">
+                            </mwl-calendar-week-view>
+                            <mwl-calendar-day-view *ngSwitchCase="'day'" [viewDate]="viewDate" [events]="events"
+                                [refresh]="refresh" (eventClicked)="editEvent('edit', $event.event)"
+                                (eventTimesChanged)="eventTimesChanged($event)">
+                            </mwl-calendar-day-view>
+                        </div>
+                   
+                    <!-- <form fxLayout="column" [formGroup]="verticalStepperStep2">
+
+                        <ng-template matStepLabel>Fill out your address</ng-template>
+
+                        <div fxFlex="1 0 auto" fxLayout="row">
+
+                            <mat-form-field appearance="outline" fxFlex="100">
+                                <mat-label>Address</mat-label>
+                                <textarea matInput formControlName="address" required>
+                                    1600 Amphitheatre Pkwy
+                                </textarea>
+                                <mat-error>Address is required!</mat-error>
+                            </mat-form-field>
+
+                        </div>
+
+                        <div fxLayout="row" fxLayoutAlign="center center">
+                            <button class="mr-8" mat-raised-button matStepperPrevious type="button" color="accent">
+                                Previous
+                            </button>
+                            <button mat-raised-button matStepperNext type="button" color="accent">
+                                Next
+                            </button>
+                        </div>
+
+                    </form> -->
+
+                </mat-step>
+
+                <mat-step [stepControl]="verticalStepperStep3">
+
+                    <form fxLayout="column" [formGroup]="verticalStepperStep3">
+
+                        <ng-template matStepLabel>Fill out your address</ng-template>
+
+                        <div fxFlex="1 0 auto" fxLayout="column">
+
+                            <mat-form-field appearance="outline" fxFlex="100">
+                                <mat-label>City</mat-label>
+                                <input matInput formControlName="city" required>
+                                <mat-error>City is required!</mat-error>
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline" fxFlex="100">
+                                <mat-label>State</mat-label>
+                                <input matInput formControlName="state" required>
+                                <mat-error>State is required!</mat-error>
+                            </mat-form-field>
+
+                            <mat-form-field appearance="outline" fxFlex="100">
+                                <mat-label>Postal Code</mat-label>
+                                <input matInput #postalCode3 formControlName="postalCode"
+                                       maxlength="5" required>
+                                <mat-hint align="end">{{postalCode3.value.length}} / 5</mat-hint>
+                                <mat-error>Postal Code is required!</mat-error>
+                            </mat-form-field>
+
+                        </div>
+
+                        <div fxLayout="row" fxLayoutAlign="center center">
+                            <button class="mr-8" mat-raised-button matStepperPrevious type="button" color="accent">
+                                Previous
+                            </button>
+                            <button mat-raised-button matStepperNext type="button" color="accent">
+                                Next
+                            </button>
+                        </div>
+
+                    </form>
+
+                </mat-step>
+
+                <mat-step>
+
+                    <ng-template matStepLabel>Done</ng-template>
+
+                    <div class="h2 m-16" fxLayout="row" fxLayoutAlign="center center">
+                        Thank your for filling out our form.
+                    </div>
+
+                    <div fxLayout="row" fxLayoutAlign="center center">
+                        <button class="mr-8" mat-raised-button matStepperPrevious type="button" color="accent">
+                            Previous
+                        </button>
+                        <button mat-raised-button type="button" color="accent" (click)="finishVerticalStepper()">
+                            Finish
+                        </button>
+                    </div>
+
+                </mat-step>
+
+            </mat-vertical-stepper>
+            <!-- / VERTICAL STEPPER EXAMPLE -->
+
+        </div>
+
+    </div>
+    <!-- / CONTENT -->
+
+</div>
+
+

@@ -1,0 +1,69 @@
+<!-- SIDEBAR HEADER -->
+<div class="header accent p-24" fxLayout="column" fxLayoutAlign="space-between">
+
+    <div class="toolbar" fxLayout="row" fxLayoutAlign="end center">
+
+        <button mat-icon-button class="" aria-label="Download" matTooltip="Download">
+            <mat-icon>file_download</mat-icon>
+        </button>
+    </div>
+
+    <div>
+        <div class="title mb-8">{{selected.nombre}}</div>
+    </div>
+</div>
+<!-- / SIDEBAR HEADER -->
+
+<!-- SIDEBAR CONTENT -->
+<div class="content p-24" fusePerfectScrollbar>
+
+    <div class="file-details" [@animate]="{value:'*',params:{delay:'200ms'}}">
+
+        <div class="title">Información</div>
+
+        <table>
+            
+            <tr class="document">
+                <th>Paciente</th>
+                <td>{{selected.paciente}}</td>
+            </tr>
+
+            <tr class="document">
+                <th>Documento</th>
+                <td>{{selected.cedula}}</td>
+            </tr>
+
+            <tr class="type">
+                <th>Tipo</th>
+                <td>{{selected.type}}</td>
+            </tr>
+            <!--
+            <tr class="location">
+                <th>Location</th>
+                <td>{{selected.location}}</td>
+            </tr>
+
+            <tr class="owner">
+                <th>Owner</th>
+                <td>{{selected.owner}}</td>
+            </tr>
+
+            <tr class="modified">
+                <th>Modified</th>
+                <td>{{selected.modified}}</td>
+            </tr>
+
+            <tr class="opened">
+                <th>Opened</th>
+                <td>{{selected.opened}}</td>
+            </tr>
+
+            <tr class="created">
+                <th>Created</th>
+                <td>{{selected.created}}</td>
+            </tr> -->
+        </table>
+    </div>
+
+</div>
+<!-- / SIDEBAR CONTENT -->
