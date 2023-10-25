@@ -37,6 +37,7 @@ import {
 } from "@angular/router";
 import * as moment from "moment";
 import { registerLocaleData } from "@angular/common";
+import { HttpClient } from '@angular/common/http';
 import localeEs from "@angular/common/locales/es";
 import { find } from "lodash";
 import { citys } from "../../../../constants/city";
@@ -63,6 +64,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   horizontalStepperStep1: FormGroup;
   horizontalStepperStep2: FormGroup;
   horizontalStepperStep3: FormGroup;
+  http: HttpClient;
 
   // Vertical Stepper
   verticalStepperStep1: FormGroup;
@@ -202,6 +204,12 @@ export class CalendarComponent implements OnInit, OnDestroy {
    * On init
    */
   ngOnInit(): void {
+
+    this.router.queryParams.subscribe(params => {
+      console.log('Respuesta de PayU:', params.message);
+      // Aquí puedes realizar acciones adicionales, como procesar los datos recibidos.
+    });
+
     this.form = this._formBuilder.group({
       company: [
         {
@@ -223,7 +231,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
     // Horizontal Stepper form steps
     this.horizontalStepperStep3 = this._formBuilder.group({
       canal: [""],
-      ciudad: this.horizontalStepperStep3.controls["ciudad"].value === 46051562 ? [""] : ["", Validators.required] ,
+      ciudad: [""],
       disciplina: ["", Validators.required],
       observaciones: [""],
 
@@ -528,14 +536,22 @@ export class CalendarComponent implements OnInit, OnDestroy {
 
  
   async changeCanal(event: any)  {
-    if (this.cliente.ProcesoActivo  == 1 && event.value === 46051562) {
+    const valorProcesoActivo = this.cliente?.ProcesoActivo || 0;
+    if (valorProcesoActivo  == 1 && event.value === 46051562) {
       await Swal.fire({
         title: `El cliente ${this.cliente.nombre} ${this.cliente.apellido} tiene un proceso abierto no debe efectuar el pago de la consulta...`,
         icon: "info",
       });
     }
     console.log('canal de atencion', event);
-    console.log('canal de atencion', event.value);    
+    console.log('canal de atencion', event.value);  
+    if (event.value !== 46051562) {
+      this.horizontalStepperStep3.get("ciudad").setValidators([Validators.required]);
+      this.horizontalStepperStep3.get("ciudad").updateValueAndValidity();
+    } else {
+      this.horizontalStepperStep3.get("ciudad").clearValidators();
+      this.horizontalStepperStep3.get("ciudad").updateValueAndValidity();
+    }  
     this.disabledCiudad = event.value === 46051562 ? true : false;
 
   }
@@ -610,11 +626,10 @@ export class CalendarComponent implements OnInit, OnDestroy {
           this.cliente = data[0];
           if (data[0].ProcesoActivo  == 0) {
             await Swal.fire({
-              title: `No es posible el agendamiento por que el cliente ${data[0].nombre} ${data[0].apellido} no tiene un proceso abierto...`,
+              title: `El Cliente ${data[0].nombre} ${data[0].apellido} no tiene un proceso abierto...`,
               icon: "info",
             });
           }
-          if (data[0].ProcesoActivo == 1) {
             this.stepper.next();
             const docName = this.docType.filter((x) => x.id == data[0].tipoDoc);
             this.verticalStepperStep2.controls["id"].setValue(data[0].id);
@@ -631,17 +646,16 @@ export class CalendarComponent implements OnInit, OnDestroy {
             );
             this.verticalStepperStep2.controls["email"].setValue(data[0].email);
             this.verticalStepperStep2.controls["ciudad"].setValue(data[0].ciudad);
-          }
         }
       },
       (err) => {
         this.stepper.next();
         this.verticalStepperStep2.controls["id"].setValue("");
+        
         this.verticalStepperStep2.controls["documentType"].setValue("");
         this.verticalStepperStep2.controls["document"].setValue(cc);
         this.verticalStepperStep2.controls["name"].setValue("");
         this.verticalStepperStep2.controls["lastName"].setValue("");
-        this.verticalStepperStep2.controls["position"].setValue("");
         this.verticalStepperStep2.controls["phone"].setValue("");
         this.verticalStepperStep2.controls["email"].setValue("");
         console.log("Error rec" + JSON.stringify(err));
@@ -672,7 +686,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
     this.id = this.verticalStepperStep2.controls["id"].value;
     this.nombre = this.verticalStepperStep2.controls["name"].value.trim();
     this.apellido = this.verticalStepperStep2.controls["lastName"].value;
-    this.cargo = this.verticalStepperStep2.controls["position"].value;
+    //this.cargo = this.verticalStepperStep2.controls["position"].value;
     this.tel = this.verticalStepperStep2.controls["phone"].value;
     this.email = this.verticalStepperStep2.controls["email"].value;
     //this.emailCc = this.horizontalStepperStep3.controls['emailCc'].value;
@@ -682,7 +696,6 @@ export class CalendarComponent implements OnInit, OnDestroy {
     this.observaciones =
       this.horizontalStepperStep3.controls["observaciones"].value;
     //this.perfil = this.horizontalStepperStep3.controls["perfil"].value;
-    this.disastep = true;
     const tmpCiud = this.ciudad;
     // if (this.ciudad != "24276760" || this.espacio) {
     //   this.disastep = false;
@@ -697,7 +710,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   }
 
   redirectAsso(): void {
-    window.location.href = "https://www.jep.gov.co/Paginas/Inicio.aspx";
+    window.location.href = "https://totaljuridica.com/";
   }
 
   // particularChange(event){
@@ -716,13 +729,12 @@ export class CalendarComponent implements OnInit, OnDestroy {
       this._calendarService
         .updatePaciente(
           this.empresa,
-          this.ciudad,
+          this.verticalStepperStep2.controls["ciudad"].value,
           this.docu,
           this.docNumber,
           this.nombre,
           this.apellido,
           this.tel,
-          this.cargo,
           this.tipoExamen,
           this.id,
           this.email
@@ -740,8 +752,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
     } else {
       this._calendarService
         .createPaciente(
-          this.empresa,
-          this.ciudad,
+          this.verticalStepperStep2.controls["ciudad"].value,
           this.docu,
           this.docNumber,
           this.nombre,
@@ -771,10 +782,12 @@ export class CalendarComponent implements OnInit, OnDestroy {
     const Json: any = {
       canal: this.horizontalStepperStep3.controls["canal"].value,
       //tipoConsulta: this.horizontalStepperStep3.controls["perfil"].value,
-      tipoRelacion: this.verticalStepperStep2.controls["position"].value,
+      tipoRelacion: this.horizontalStepperStep3.controls["disciplina"].value,
+      dispo: this.consultorio
+
     };
     this._calendarService
-      .createCita(id, this.fecha, this.ciudad, this.observaciones, Json)
+      .createCita(id, this.fecha, this.horizontalStepperStep3.controls["ciudad"].value, this.observaciones, Json)
       .subscribe(
         async (data) => {
           if (data) {
@@ -784,7 +797,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
               this._calendarService.loadSecure(this.fileContent);
             }
             if (this.consultorio != 0) {
-              this.updateDisponibilidad(this.consultorio, data.id);
+              this.updateDisponibilidad(this.consultorio);
             }
           }
           await Swal.fire({
@@ -806,8 +819,8 @@ export class CalendarComponent implements OnInit, OnDestroy {
       );
   }
 
-  updateDisponibilidad(id, cita) {
-    this._calendarService.updateDisponibilidad(id, cita).subscribe(
+  updateDisponibilidad(id) {
+    this._calendarService.updateDisponibilidad(id).subscribe(
       (data) => {
         if (data) {
           console.log("se registro con exito");
@@ -1106,17 +1119,96 @@ export class CalendarComponent implements OnInit, OnDestroy {
     return `${formattedHours}:${formattedMinutes} ${meridian}`;
   }
 
+  saveDatasessionStorage() {
+    const data = {
+      numeroDoc:  this.verticalStepperStep2.controls["document"].value,
+      idCiudad: this.verticalStepperStep2.controls["id"].value,
+      ciudadRId: this.verticalStepperStep2.controls["ciudad"].value,
+      ciudadCId: this.horizontalStepperStep3.controls["ciudad"].value,
+      disciplina: this.horizontalStepperStep3.controls["disciplina"].value,
+      canalId: this.horizontalStepperStep3.controls["canal"].value,
+      typeDoc: this.verticalStepperStep2.controls["documentType"].value,
+      nombres: this.verticalStepperStep2.controls["name"].value,
+      apellidos: this.verticalStepperStep2.controls["lastName"].value,
+      correo: this.verticalStepperStep2.controls["email"].value,
+      phone: this.verticalStepperStep2.controls["phone"].value,
+      observac: this.horizontalStepperStep3.controls["observaciones"].value
+    }; // Objeto con múltiples valores que deseas guardar
+    sessionStorage.setItem('dataClient', JSON.stringify(data)); // Guardar el objeto en el sessionStorage
+  }
+
+  openWindow() {
+    const valorProcesoActivo = this.cliente?.ProcesoActivo || 0;
+
+    if(parseInt(this.horizontalStepperStep3.controls["canal"].value) == 46051562 && valorProcesoActivo == 0){
+         // URL que deseas abrir en la ventana emergente
+    const url = 'https://biz.payulatam.com/B0f386eB2B4C561'; 
+
+    this.saveDatasessionStorage();
+
+   // const url = this.router.url;
+    console.log('URL actual:', url); 
+
+    /*
+        
+        let paymentString = `
+            <html>
+              <body>
+                <form action="https://sandbox.checkout.payulatam.com/ppp-web-gateway-payu/" method="post" id="payu_form">
+                <input name="merchantId"      type="hidden"  value="508029"   >
+                <input name="accountId"       type="hidden"  value="512321" >
+                <input name="description"     type="hidden"  value="Test PAYU"  >
+                <input name="referenceCode"   type="hidden"  value="TestPayU" >
+                <input name="amount"          type="hidden"  value="140000"   >
+                <input name="tax"             type="hidden"  value="0"  >
+                <input name="taxReturnBase"   type="hidden"  value="0" >
+                <input name="currency"        type="hidden"  value="COP" >
+                <input name="signature"       type="hidden"  value="e0fff8fe4d1c34642a3f35299a337465"  >
+                <input name="test"            type="hidden"  value="1" >
+                <input name="buyerEmail"      type="hidden"  value="durango1103@gmail.com" >
+                <input name="responseUrl"     type="hidden"  value="http://www.test.com/response" >
+                <input name="confirmationUrl" type="hidden"  value="http://www.test.com/confirmation" >
+                <input name="Submit"          type="hidden"  value="Send" >
+                  <button type="submit" value="submit" #submitBtn></button>
+                </form>
+                <script type="text/javascript">document.getElementById("payu_form").submit();</script>
+              </body>
+            </html>`;
+        
+        const winUrl = URL.createObjectURL(
+            new Blob([paymentString], { type: "text/html" })
+        );
+
+
+        */
+
+     // Opciones de la ventana emergente
+    const opciones = 'width=600,height=400,scrollbars=yes';
+        
+    window.location.href = url;
+
+      // Abre la ventana emergente
+   // window.open(url, '_blank', opciones);
+
+
+    }else{
+      this.disastep = true;
+      this.stepper.next();
+    }
+  }
+
   getDisponibilidad() {
     const Json: any = {
       canal: this.horizontalStepperStep3.controls["canal"].value,
       ciudad: this.horizontalStepperStep3.controls["ciudad"].value,
-      tipo: this.verticalStepperStep3.controls["disciplina"].value,
+      tipo: this.horizontalStepperStep3.controls["disciplina"].value,
     };
     this._calendarService.getDisponibilidad(Json, "").subscribe(
       (data) => {
         if (data) {
           this.disponibilidad = data;
           let dates = [];
+         // this.events = null;
           for (let index = 0; index < data.length; index++) {
             let fecha = new Date(data[index].other);
             let a = new Date(

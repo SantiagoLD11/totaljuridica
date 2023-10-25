@@ -142,7 +142,7 @@ export class CalendarService implements Resolve<any> {
             celular: data[i][6],
             email: data[i][7],
             citaAgendada: data[i][8],
-            ProcesoActivo: data[i][9]
+            ProcesoActivo: data[i][9] 
           });
           return result;
         })
@@ -372,10 +372,20 @@ export class CalendarService implements Resolve<any> {
   }
 
   public getDisponibilidad(json, laboratorio): Observable<any> {
-    return this.request(
-      "get",
-      `SELECT id,R17143530,Fecha_Hora,name,Fecha_Hora_Fin FROM Disponibilidad WHERE Ciudad = ${json.ciudad} AND Disponible = 1 AND R41568986_txt LIKE ('%${json.tipo}%') AND R41562287_txt LIKE ('%${json.canal}%') ORDER BY RAND()`
-    );
+
+    if(`${json.canal}` === "46051270"){ //Canal Presencial 
+      return this.request(
+        "get",
+        `SELECT id,R17143530,Fecha_Hora,name,Fecha_Hora_Fin FROM Disponibilidad WHERE R47142938 = ${json.ciudad} AND Disponible = 1 AND R41568986_txt LIKE ('%${json.tipo}%') AND R41562287_txt LIKE ('%${json.canal}%') ORDER BY RAND()`
+      );
+    }else{ // Canal Virutal
+      return this.request(
+        "get",
+        `SELECT id,R17143530,Fecha_Hora,name,Fecha_Hora_Fin FROM Disponibilidad WHERE Disponible = 1 AND R41568986_txt LIKE ('%${json.tipo}%') AND R41562287_txt LIKE ('%${json.canal}%') ORDER BY RAND()`
+      );
+
+    }
+
   }
 
   public saveOrder(id, sucursal): Observable<any> {
@@ -386,7 +396,6 @@ export class CalendarService implements Resolve<any> {
   }
 
   public createPaciente(
-    empresa,
     ciudad,
     docu,
     docnum,
@@ -397,7 +406,7 @@ export class CalendarService implements Resolve<any> {
     cita,
     email
   ): Observable<any> {
-    let params = `R11432733=${empresa}&Tipo_Documento=${docu}&Numero_Documento=${docnum}&Nombre=${nombre}&Apellido=${apellido}&Celular=${celular}&Cargo=${cargo}&Detalle_Servicio=${cita}&email=${email}`;
+    let params = `Tipo_Documento=${docu}&Numero_Documento=${docnum}&Nombre=${nombre}&Apellido=${apellido}&Celular=${celular}&Cargo=${cargo}&Detalle_Servicio=${cita}&email=${email}&R15049289=${ciudad}&Proceso_Activo=false`;
     var command = `create2?output=json&useIds=true&objName=Candidato&${params}`;
     return this.postAction(command);
   }
@@ -410,18 +419,17 @@ export class CalendarService implements Resolve<any> {
     nombre,
     apellido,
     celular,
-    cargo,
     cita,
     id,
     email
   ): Observable<any> {
-    let params = `id=${id}&Tipo_Documento=${docu}&Numero_Documento=${docnum}&Nombre=${nombre}&Apellido=${apellido}&Celular=${celular}&R41531956=${cargo}&email=${email}`;
+    let params = `id=${id}&Tipo_Documento=${docu}&Numero_Documento=${docnum}&Nombre=${nombre}&Apellido=${apellido}&Celular=${celular}&R15049289=${ciudad}&email=${email}`;
     var command = `updateRecord?output=json&objName=Candidato&${params}`;
     return this.postAction(command);
   }
 
-  public updateDisponibilidad(id, cita): Observable<any> {
-    let params = `id=${id}&Disponible=0&R17614108=${cita}`;
+  public updateDisponibilidad(id): Observable<any> {
+    let params = `id=${id}&Disponible=0`;
     var command = `updateRecord?output=json&objName=Disponibilidad&${params}`;
     return this.postAction(command);
   }
@@ -429,7 +437,7 @@ export class CalendarService implements Resolve<any> {
   public createCita(id, fecha, ciudad, observaciones, Json) {
     let date = fecha != null ? fecha : new Date();
     date = date.getTime();
-    let params = `R15590433=${ciudad}&R15590447=${id}&Fecha_Cita=${date}&Observacion_Cliente=${observaciones}&R41735148=${Json.canal}&R41735117=${Json.tipoRelacion}`; //&Tipo_de_Examen=${tipoExamen}`;
+    let params = `R15590433=${ciudad}&R15590447=${id}&Fecha_Cita=${date}&Observacion_Cliente=${observaciones}&R41735148=${Json.canal}&R41735117=${Json.tipoRelacion}&R17614108=${Json.dispo}`; //&Tipo_de_Examen=${tipoExamen}`;
     var command = `create2?output=json&objName=Consulta&${params}`;
     //console.log(command);
     return this.postActionError(command);

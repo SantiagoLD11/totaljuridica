@@ -3054,7 +3054,7 @@ window.global = window;
 /*! no static exports found */
 /***/ (function(module, exports, __webpack_require__) {
 
-module.exports = __webpack_require__(/*! C:\Users\kanov\OneDrive\Documentos\Trabajo\impel\totaljuridica\src\polyfills.ts */"./src/polyfills.ts");
+module.exports = __webpack_require__(/*! C:\Users\Santiago\Documents\PROYECTOS IMPEL\totaljuridica\src\polyfills.ts */"./src/polyfills.ts");
 
 
 /***/ })
