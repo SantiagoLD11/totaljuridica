@@ -73,6 +73,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   verticalStepperStep4: FormGroup;
   btnCalendar: any = true;
   particularDiv = true;
+  approvedTransacc : boolean = false;
   selected = 0;
   myfilename = "";
   fileContent: any;
@@ -205,11 +206,6 @@ export class CalendarComponent implements OnInit, OnDestroy {
    */
   ngOnInit(): void {
 
-    this.router.queryParams.subscribe(params => {
-      console.log('Respuesta de PayU:', params.message);
-      // Aquí puedes realizar acciones adicionales, como procesar los datos recibidos.
-    });
-
     this.form = this._formBuilder.group({
       company: [
         {
@@ -297,6 +293,65 @@ export class CalendarComponent implements OnInit, OnDestroy {
       this.findByCC();
       this.isWeb = false;
     }
+
+    this.router.queryParams.subscribe(params => {
+      console.log('Respuesta de PayU:', params);
+      if(Object.keys(params).length > 0){
+        console.log('Tiene Informacion');
+        console.log('Mensaje: '+ params.lapResponseCode);
+        if(params.transactionState == 4){ // Existoso
+          console.log('Pago Exitoso');
+          Swal.fire({
+            title: `Su pago fue realizado correctamente.. ${params.lapResponseCode}`,
+            icon: "info",
+          });
+          this.approvedTransacc = true;
+          this.returnState();
+
+        }else{
+
+          console.log('Pago Declinado');
+          Swal.fire({
+            title: `El pago fue rechazado.. ${params.lapResponseCode}`,
+            icon: "info",
+          });
+
+          this.returnState();
+
+        }
+      }else{
+        console.log('No Tiene informacion queryParams');
+      }
+
+      // Aquí puedes realizar acciones adicionales, como procesar los datos recibidos.
+    });
+  }
+
+  returnState(): void {
+    const retrievedData = JSON.parse(sessionStorage.getItem('dataClient')) || {};
+
+    console.log('JSON Data: '+ retrievedData);
+    console.log('Numero Doc: '+ retrievedData.numeroDoc);
+    
+    //------------------------------//Recuperar Estado Anterior//------------//
+    this.horizontalStepperStep1.controls["documentNumber"].setValue(retrievedData.numeroDoc);
+    this.verticalStepperStep2.controls["id"].setValue(retrievedData.idCiudad);
+    this.verticalStepperStep2.controls["ciudad"].setValue(retrievedData.ciudadRId);
+    this.horizontalStepperStep3.controls["ciudad"].setValue(retrievedData.ciudadCId);
+    this.horizontalStepperStep3.controls["disciplina"].setValue(retrievedData.disciplina);
+    this.horizontalStepperStep3.controls["canal"].setValue(retrievedData.canalId);
+    this.verticalStepperStep2.controls["documentType"].setValue(retrievedData.typeDoc);
+    this.verticalStepperStep2.controls["name"].setValue(retrievedData.nombres);
+    this.verticalStepperStep2.controls["lastName"].setValue(retrievedData.apellidos);
+    this.verticalStepperStep2.controls["email"].setValue(retrievedData.correo);
+    this.verticalStepperStep2.controls["phone"].setValue(retrievedData.phone);
+    this.horizontalStepperStep3.controls["observaciones"].setValue(retrievedData.observac);
+
+    this.findByCC();
+
+    this.stepper.next();
+    this.stepper.next();
+    //sessionStorage.removeItem('dataClient');
   }
 
   fileChangeEventSave(fileInput: any) {
@@ -1121,7 +1176,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
 
   saveDatasessionStorage() {
     const data = {
-      numeroDoc:  this.verticalStepperStep2.controls["document"].value,
+      numeroDoc:  this.horizontalStepperStep1.controls["documentNumber"].value,
       idCiudad: this.verticalStepperStep2.controls["id"].value,
       ciudadRId: this.verticalStepperStep2.controls["ciudad"].value,
       ciudadCId: this.horizontalStepperStep3.controls["ciudad"].value,
@@ -1140,7 +1195,11 @@ export class CalendarComponent implements OnInit, OnDestroy {
   openWindow() {
     const valorProcesoActivo = this.cliente?.ProcesoActivo || 0;
 
-    if(parseInt(this.horizontalStepperStep3.controls["canal"].value) == 46051562 && valorProcesoActivo == 0){
+    if(!this.approvedTransacc){
+      console.log('No existe transaccion aprobada ' +this.approvedTransacc); 
+    }
+
+    if(parseInt(this.horizontalStepperStep3.controls["canal"].value) == 46051562 && valorProcesoActivo == 0 && !this.approvedTransacc){
          // URL que deseas abrir en la ventana emergente
     const url = 'https://biz.payulatam.com/B0f386eB2B4C561'; 
 
@@ -1203,12 +1262,20 @@ export class CalendarComponent implements OnInit, OnDestroy {
       ciudad: this.horizontalStepperStep3.controls["ciudad"].value,
       tipo: this.horizontalStepperStep3.controls["disciplina"].value,
     };
+    if(parseInt(Json.tipo) == parseInt('46066373')){ // Es Disciplina Penal, Crear Cita sin disponibilida
+      this.id = 1;
+      this.finishVerticalStepper();
+      this.stepper.selectedIndex = 3;
+      this.stepper.next();
+      
+    }else{
     this._calendarService.getDisponibilidad(Json, "").subscribe(
       (data) => {
-        if (data) {
+        console.log('Data: '+data.length);
+        if (data && data.length > 0) {
           this.disponibilidad = data;
           let dates = [];
-         // this.events = null;
+          this.events = [];
           for (let index = 0; index < data.length; index++) {
             let fecha = new Date(data[index].other);
             let a = new Date(
@@ -1254,11 +1321,21 @@ export class CalendarComponent implements OnInit, OnDestroy {
               this.refresh.next(true);
             }
           }
+        }else{
+          Swal.fire({
+            title: `No se encontro disponibilidades..`,
+            icon: "info",
+          });
         }
       },
       (err) => {
+        Swal.fire({
+          title: `No se encontro disponibilidades..`,
+          icon: "info",
+        });
         console.log("Error rec" + JSON.stringify(err));
       }
-    );
+      );
+    }
   }
 }
