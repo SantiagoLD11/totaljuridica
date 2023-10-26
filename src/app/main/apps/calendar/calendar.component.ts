@@ -73,7 +73,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   verticalStepperStep4: FormGroup;
   btnCalendar: any = true;
   particularDiv = true;
-  approvedTransacc : boolean = false;
+  approvedTransacc: boolean = false;
   selected = 0;
   myfilename = "";
   fileContent: any;
@@ -131,12 +131,13 @@ export class CalendarComponent implements OnInit, OnDestroy {
   cita: any;
   observaciones: any;
   espacio: any = false;
+  payProcess: boolean = false;
 
   paso1Completado: boolean = false;
   paso2Completado: boolean = false;
 
   msgOthersCities: any = "";
-  disastep: any;
+  disastep: boolean;
   isWeb = true;
   modalidad = "Presencial";
 
@@ -268,7 +269,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
 
     });
 
-    
+
 
     /**
      * Watch re-render-refresh for updating db
@@ -294,32 +295,36 @@ export class CalendarComponent implements OnInit, OnDestroy {
       this.isWeb = false;
     }
 
-    this.router.queryParams.subscribe(params => {
+    this.router.queryParams.subscribe(params => { //Router [Url Actual] --> Parametros de Payu
       console.log('Respuesta de PayU:', params);
-      if(Object.keys(params).length > 0){
+      if (Object.keys(params).length > 0) {
         console.log('Tiene Informacion');
-        console.log('Mensaje: '+ params.lapResponseCode);
-        if(params.transactionState == 4){ // Existoso
+        console.log('Mensaje: ' + params.lapResponseCode);
+        this.payProcess = true; // Proceso de Pago
+        this.returnState();
+        if (params.transactionState == 4) { // Existoso
           console.log('Pago Exitoso');
+          this.approvedTransacc = true;
+
           Swal.fire({
-            title: `Su pago fue realizado correctamente.. ${params.lapResponseCode}`,
+            title: `Su pago fue realizado correctamente. ${params.lapResponseCode}`,
             icon: "info",
           });
-          this.approvedTransacc = true;
-          this.returnState();
-
-        }else{
-
+        } else {
           console.log('Pago Declinado');
+
           Swal.fire({
             title: `El pago fue rechazado.. ${params.lapResponseCode}`,
             icon: "info",
           });
-
-          this.returnState();
-
         }
-      }else{
+        //----------------------------//Notificar Estado de Transaccion a Cita//-------------//
+
+        let jsonParams: any = JSON.stringify(params);
+
+        this.CreateTransaction(jsonParams);
+
+      } else {
         console.log('No Tiene informacion queryParams');
       }
 
@@ -330,11 +335,12 @@ export class CalendarComponent implements OnInit, OnDestroy {
   returnState(): void {
     const retrievedData = JSON.parse(sessionStorage.getItem('dataClient')) || {};
 
-    console.log('JSON Data: '+ retrievedData);
-    console.log('Numero Doc: '+ retrievedData.numeroDoc);
-    
+    console.log('JSON Data: ' + retrievedData);
+    console.log('Numero Doc: ' + retrievedData.numeroDoc);
+
     //------------------------------//Recuperar Estado Anterior//------------//
     this.horizontalStepperStep1.controls["documentNumber"].setValue(retrievedData.numeroDoc);
+    this.verticalStepperStep2.controls["document"].setValue(retrievedData.numeroDoc);
     this.verticalStepperStep2.controls["id"].setValue(retrievedData.idCiudad);
     this.verticalStepperStep2.controls["ciudad"].setValue(retrievedData.ciudadRId);
     this.horizontalStepperStep3.controls["ciudad"].setValue(retrievedData.ciudadCId);
@@ -346,11 +352,42 @@ export class CalendarComponent implements OnInit, OnDestroy {
     this.verticalStepperStep2.controls["email"].setValue(retrievedData.correo);
     this.verticalStepperStep2.controls["phone"].setValue(retrievedData.phone);
     this.horizontalStepperStep3.controls["observaciones"].setValue(retrievedData.observac);
+    this.consultorio = parseInt(retrievedData.idDispo);
+    this.citaId = retrievedData.idCita;
+    this.id = retrievedData.idCliente;
 
     this.findByCC();
+    this.disastep = false;
 
-    this.stepper.next();
-    this.stepper.next();
+    //sessionStorage.removeItem('dataClient');
+  }
+
+  CreateTransaction(dataTransac: any) {
+
+    console.log('JSON Data: ' + dataTransac);
+
+    let _idCita,_idTransac: Number = 0;
+
+    let dataJSON: any = {
+      jsonInfo:String(dataTransac),
+      transactionId: dataTransac.transactionId,
+      idCita:dataTransac.idCita,
+      idClient: dataTransac.idCliente
+    };
+
+    this._calendarService.CreateTransaccion(dataJSON).subscribe(
+      (data) => {
+        console.log("Respuesta Rolb Transa" + data);
+        if (data) {
+          console.log("Transaccion Creada correctamente");
+        }
+      },
+      (err) => {
+        console.log("Error en creacion Ts: " + JSON.stringify(err));
+      }
+    );
+    //------------------------------//Recuperar Estado Anterior//------------/
+
     //sessionStorage.removeItem('dataClient');
   }
 
@@ -589,24 +626,24 @@ export class CalendarComponent implements OnInit, OnDestroy {
     }
   }
 
- 
-  async changeCanal(event: any)  {
+
+  async changeCanal(event: any) {
     const valorProcesoActivo = this.cliente?.ProcesoActivo || 0;
-    if (valorProcesoActivo  == 1 && event.value === 46051562) {
+    if (valorProcesoActivo == 1 && event.value === 46051562) {
       await Swal.fire({
         title: `El cliente ${this.cliente.nombre} ${this.cliente.apellido} tiene un proceso abierto no debe efectuar el pago de la consulta...`,
         icon: "info",
       });
     }
     console.log('canal de atencion', event);
-    console.log('canal de atencion', event.value);  
+    console.log('canal de atencion', event.value);
     if (event.value !== 46051562) {
       this.horizontalStepperStep3.get("ciudad").setValidators([Validators.required]);
       this.horizontalStepperStep3.get("ciudad").updateValueAndValidity();
     } else {
       this.horizontalStepperStep3.get("ciudad").clearValidators();
       this.horizontalStepperStep3.get("ciudad").updateValueAndValidity();
-    }  
+    }
     this.disabledCiudad = event.value === 46051562 ? true : false;
 
   }
@@ -652,16 +689,22 @@ export class CalendarComponent implements OnInit, OnDestroy {
     this._calendarService.getToken().subscribe((data) => {
       this._calendarService.getDocumentType().subscribe(
         (data) => {
-          if (data) {
+          console.log("Condicion Pago: " + this.payProcess);
+          if (data && !this.payProcess) {
             this.docType = data;
             this.searchByCC();
             this.getTypeOfRelationship();
             this.getCitysClient();
             this.getAttentionChannel();
             this.loadCiudades();
-            //this.loadPerfiles();
-            //this.loadClientes();
-            //this.loadExmamenes();
+          } else { //Solo traer los datos de las listas estaticas 
+            this.getTypeOfRelationship();
+            this.getCitysClient();
+            this.getAttentionChannel();
+            this.loadCiudades();
+            this.stepper.next();
+            this.stepper.next();
+            this.stepper.next();
           }
         },
         (err) => {
@@ -676,37 +719,37 @@ export class CalendarComponent implements OnInit, OnDestroy {
     this._calendarService.getPacienteByCC(cc).subscribe(
       async (data) => {
         console.log('data que llega', data);
-        
+
         if (data) {
           this.cliente = data[0];
-          if (data[0].ProcesoActivo  == 0) {
+          if (data[0].ProcesoActivo == 0) {
             await Swal.fire({
               title: `El Cliente ${data[0].nombre} ${data[0].apellido} no tiene un proceso abierto...`,
               icon: "info",
             });
           }
-            this.stepper.next();
-            const docName = this.docType.filter((x) => x.id == data[0].tipoDoc);
-            this.verticalStepperStep2.controls["id"].setValue(data[0].id);
-            this.verticalStepperStep2.controls["documentType"].setValue(
-              docName[0].name
-            );
-            this.verticalStepperStep2.controls["document"].setValue(Number(cc));
-            this.verticalStepperStep2.controls["name"].setValue(data[0].nombre);
-            this.verticalStepperStep2.controls["lastName"].setValue(
-              data[0].apellido
-            );
-            this.verticalStepperStep2.controls["phone"].setValue(
-              Number(data[0].celular)
-            );
-            this.verticalStepperStep2.controls["email"].setValue(data[0].email);
-            this.verticalStepperStep2.controls["ciudad"].setValue(data[0].ciudad);
+          this.stepper.next();
+          const docName = this.docType.filter((x) => x.id == data[0].tipoDoc);
+          this.verticalStepperStep2.controls["id"].setValue(data[0].id);
+          this.verticalStepperStep2.controls["documentType"].setValue(
+            docName[0].name
+          );
+          this.verticalStepperStep2.controls["document"].setValue(Number(cc));
+          this.verticalStepperStep2.controls["name"].setValue(data[0].nombre);
+          this.verticalStepperStep2.controls["lastName"].setValue(
+            data[0].apellido
+          );
+          this.verticalStepperStep2.controls["phone"].setValue(
+            Number(data[0].celular)
+          );
+          this.verticalStepperStep2.controls["email"].setValue(data[0].email);
+          this.verticalStepperStep2.controls["ciudad"].setValue(data[0].ciudad);
         }
       },
       (err) => {
         this.stepper.next();
         this.verticalStepperStep2.controls["id"].setValue("");
-        
+
         this.verticalStepperStep2.controls["documentType"].setValue("");
         this.verticalStepperStep2.controls["document"].setValue(cc);
         this.verticalStepperStep2.controls["name"].setValue("");
@@ -780,56 +823,68 @@ export class CalendarComponent implements OnInit, OnDestroy {
    * Finish the vertical stepper
    */
   finishVerticalStepper(): void {
-    if (this.id > 0) {
-      this._calendarService
-        .updatePaciente(
-          this.empresa,
-          this.verticalStepperStep2.controls["ciudad"].value,
-          this.docu,
-          this.docNumber,
-          this.nombre,
-          this.apellido,
-          this.tel,
-          this.tipoExamen,
-          this.id,
-          this.email
-        )
-        .subscribe(
-          (data) => {
-            if (data) {
-              this.crearCita(this.id);
+    if (this.consultorio !== 0) {
+      if (this.id > 0) {
+        this._calendarService
+          .updatePaciente(
+            this.empresa,
+            this.verticalStepperStep2.controls["ciudad"].value,
+            this.docu,
+            this.docNumber,
+            this.nombre,
+            this.apellido,
+            this.tel,
+            this.tipoExamen,
+            this.id,
+            this.email
+          )
+          .subscribe(
+            (data) => {
+              if (data) {
+                this.crearCita(this.id);
+                this.PayURequest();
+                this.stepper.next();
+              }
+            },
+            (err) => {
+              console.log("Error rec" + JSON.stringify(err));
             }
-          },
-          (err) => {
-            console.log("Error rec" + JSON.stringify(err));
-          }
-        );
+          );
+      } else {
+        this._calendarService
+          .createPaciente(
+            this.verticalStepperStep2.controls["ciudad"].value,
+            this.docu,
+            this.docNumber,
+            this.nombre,
+            this.apellido,
+            this.tel,
+            this.cargo,
+            this.tipoExamen,
+            this.email
+          )
+          .subscribe(
+            (data) => {
+              if (data) {
+                //console.log(data);
+                this.id=data.id;
+                this.crearCita(this.id);
+                this.PayURequest();
+                //alert('Se registró la cita con éxito!');
+                //this.router.navigateByUrl('/pages/login');
+              }
+            },
+            (err) => {
+              console.log("Error rec", err?.status, err?.message);
+            }
+          );
+      }
+
     } else {
-      this._calendarService
-        .createPaciente(
-          this.verticalStepperStep2.controls["ciudad"].value,
-          this.docu,
-          this.docNumber,
-          this.nombre,
-          this.apellido,
-          this.tel,
-          this.cargo,
-          this.tipoExamen,
-          this.email
-        )
-        .subscribe(
-          (data) => {
-            if (data) {
-              //console.log(data);
-              this.crearCita(data.id);
-              //alert('Se registró la cita con éxito!');
-              //this.router.navigateByUrl('/pages/login');
-            }
-          },
-          (err) => {
-            console.log("Error rec", err?.status, err?.message);
-          }
-        );
+      Swal.fire({
+        title: `Debe seleccionar una disponibilidad para continuar..`,
+        icon: "info",
+      });
     }
   }
 
@@ -1174,9 +1229,9 @@ export class CalendarComponent implements OnInit, OnDestroy {
     return `${formattedHours}:${formattedMinutes} ${meridian}`;
   }
 
-  saveDatasessionStorage() {
+  saveDatasessionStorage(): void {
     const data = {
-      numeroDoc:  this.horizontalStepperStep1.controls["documentNumber"].value,
+      numeroDoc: this.horizontalStepperStep1.controls["documentNumber"].value,
       idCiudad: this.verticalStepperStep2.controls["id"].value,
       ciudadRId: this.verticalStepperStep2.controls["ciudad"].value,
       ciudadCId: this.horizontalStepperStep3.controls["ciudad"].value,
@@ -1187,72 +1242,32 @@ export class CalendarComponent implements OnInit, OnDestroy {
       apellidos: this.verticalStepperStep2.controls["lastName"].value,
       correo: this.verticalStepperStep2.controls["email"].value,
       phone: this.verticalStepperStep2.controls["phone"].value,
-      observac: this.horizontalStepperStep3.controls["observaciones"].value
-    }; // Objeto con múltiples valores que deseas guardar
+      observac: this.horizontalStepperStep3.controls["observaciones"].value,
+      idDisponi: this.consultorio,
+      idCita: this.citaId,
+      idCliente: this.id
+    }; // Objeto con múltiples valores a guardar
     sessionStorage.setItem('dataClient', JSON.stringify(data)); // Guardar el objeto en el sessionStorage
   }
 
-  openWindow() {
-    const valorProcesoActivo = this.cliente?.ProcesoActivo || 0;
+  PayURequest(): void {
+    let valorProcesoActivo: boolean = this.cliente?.ProcesoActivo || false;
 
-    if(!this.approvedTransacc){
-      console.log('No existe transaccion aprobada ' +this.approvedTransacc); 
+    if (!this.approvedTransacc) {
+      console.log('No existe transaccion aprobada ' + this.approvedTransacc);
     }
 
-    if(parseInt(this.horizontalStepperStep3.controls["canal"].value) == 46051562 && valorProcesoActivo == 0 && !this.approvedTransacc){
-         // URL que deseas abrir en la ventana emergente
-    const url = 'https://biz.payulatam.com/B0f386eB2B4C561'; 
+    if (parseInt(this.horizontalStepperStep3.controls["canal"].value) == 46051562 && !valorProcesoActivo && !this.approvedTransacc) {
+      // URL que deseas abrir en la ventana emergente
+      const url = 'https://biz.payulatam.com/B0f386eB2B4C561';
 
-    this.saveDatasessionStorage();
+      this.saveDatasessionStorage();
 
-   // const url = this.router.url;
-    console.log('URL actual:', url); 
+      // const url = this.router.url;
+      console.log('URL actual:', url);
 
-    /*
-        
-        let paymentString = `
-            <html>
-              <body>
-                <form action="https://sandbox.checkout.payulatam.com/ppp-web-gateway-payu/" method="post" id="payu_form">
-                <input name="merchantId"      type="hidden"  value="508029"   >
-                <input name="accountId"       type="hidden"  value="512321" >
-                <input name="description"     type="hidden"  value="Test PAYU"  >
-                <input name="referenceCode"   type="hidden"  value="TestPayU" >
-                <input name="amount"          type="hidden"  value="140000"   >
-                <input name="tax"             type="hidden"  value="0"  >
-                <input name="taxReturnBase"   type="hidden"  value="0" >
-                <input name="currency"        type="hidden"  value="COP" >
-                <input name="signature"       type="hidden"  value="e0fff8fe4d1c34642a3f35299a337465"  >
-                <input name="test"            type="hidden"  value="1" >
-                <input name="buyerEmail"      type="hidden"  value="durango1103@gmail.com" >
-                <input name="responseUrl"     type="hidden"  value="http://www.test.com/response" >
-                <input name="confirmationUrl" type="hidden"  value="http://www.test.com/confirmation" >
-                <input name="Submit"          type="hidden"  value="Send" >
-                  <button type="submit" value="submit" #submitBtn></button>
-                </form>
-                <script type="text/javascript">document.getElementById("payu_form").submit();</script>
-              </body>
-            </html>`;
-        
-        const winUrl = URL.createObjectURL(
-            new Blob([paymentString], { type: "text/html" })
-        );
+      window.location.href = url;
 
-
-        */
-
-     // Opciones de la ventana emergente
-    const opciones = 'width=600,height=400,scrollbars=yes';
-        
-    window.location.href = url;
-
-      // Abre la ventana emergente
-   // window.open(url, '_blank', opciones);
-
-
-    }else{
-      this.disastep = true;
-      this.stepper.next();
     }
   }
 
@@ -1262,16 +1277,26 @@ export class CalendarComponent implements OnInit, OnDestroy {
       ciudad: this.horizontalStepperStep3.controls["ciudad"].value,
       tipo: this.horizontalStepperStep3.controls["disciplina"].value,
     };
+
+    /* //Requerimiento Omitido 26/10/20230
     if(parseInt(Json.tipo) == parseInt('46066373')){ // Es Disciplina Penal, Crear Cita sin disponibilida
-      this.id = 1;
-      this.finishVerticalStepper();
+      this.ciudad = this.horizontalStepperStep3.controls["ciudad"].value;
+      this.docu = this.verticalStepperStep2.controls["documentType"].value;
+      this.docNumber = this.verticalStepperStep2.controls["document"].value;  //PROPIEDADES
+      this.id = this.verticalStepperStep2.controls["id"].value;
+      this.nombre = this.verticalStepperStep2.controls["name"].value.trim();
+      this.apellido = this.verticalStepperStep2.controls["lastName"].value;
+      this.tel = this.verticalStepperStep2.controls["phone"].value;
+      this.email = this.verticalStepperStep2.controls["email"].value;
+      this.observaciones = this.horizontalStepperStep3.controls["observaciones"].value;
+
+      this.finishVerticalStepper();  //Adelantar Pasos
       this.stepper.selectedIndex = 3;
       this.stepper.next();
-      
-    }else{
+      */
     this._calendarService.getDisponibilidad(Json, "").subscribe(
       (data) => {
-        console.log('Data: '+data.length);
+        console.log('Data: ' + data.length);
         if (data && data.length > 0) {
           this.disponibilidad = data;
           let dates = [];
@@ -1321,11 +1346,14 @@ export class CalendarComponent implements OnInit, OnDestroy {
               this.refresh.next(true);
             }
           }
-        }else{
+          this.disastep = true;
+          this.stepper.next();
+        } else {
           Swal.fire({
             title: `No se encontro disponibilidades..`,
             icon: "info",
           });
+          this.disastep = false;
         }
       },
       (err) => {
@@ -1333,9 +1361,9 @@ export class CalendarComponent implements OnInit, OnDestroy {
           title: `No se encontro disponibilidades..`,
           icon: "info",
         });
+        this.disastep = false;
         console.log("Error rec" + JSON.stringify(err));
       }
-      );
-    }
+    );
   }
 }

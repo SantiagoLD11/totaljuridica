@@ -443,6 +443,15 @@ export class CalendarService implements Resolve<any> {
     return this.postActionError(command);
   }
 
+  public CreateTransaccion(Json:any) : Observable<any> {
+    // R48030298 =id Paciente/Ciudadano..
+    // R48045115 = id Cita
+    let params = `JSON_transacc=${Json.jsonInfo}&R48030298=${Json.idClient}&R48045115=${Json.idCita}&transactionId=${Json.transactionId}`;
+    var command = `create2?output=json&objName=Transacciones&${params}`;
+    //console.log(command);
+    return this.postActionError(command);
+  }
+
   public loadSecure(content) {
     const tok = this._loginService.getToken();
     var xhr = new XMLHttpRequest();

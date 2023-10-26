@@ -124,7 +124,7 @@
               </mat-form-field>
 
               <mat-form-field appearance="outline" fxFlex="100">
-                <mat-label>Ciudad</mat-label>
+                <mat-label>Ciudad de Residencia</mat-label>
                 <mat-select formControlName="ciudad" required>
                   <mat-option
                     *ngFor="let ciudad of citysClient"
@@ -216,7 +216,7 @@
                 <mat-error>La ciudad es requerida!</mat-error>
               </mat-form-field>
               <mat-form-field appearance="outline" fxFlex="100">
-                <mat-label>Observaciones</mat-label>
+                <mat-label>Tema a Tratar</mat-label>
                 <textarea matInput formControlName="observaciones"></textarea>
               </mat-form-field>
             </div>
@@ -226,7 +226,7 @@
                 mat-raised-button
                 type="button"
                 color="accent"
-                (click)="prepareData();openWindow()"
+                (click)="prepareData()"
               >
                 Siguiente
               </button>
@@ -422,7 +422,6 @@
               </button>
               <button
                 mat-raised-button
-                matStepperNext
                 type="button"
                 [disabled]="btnCalendar"
                 color="accent"
