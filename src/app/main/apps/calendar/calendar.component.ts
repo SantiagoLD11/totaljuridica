@@ -269,8 +269,6 @@ export class CalendarComponent implements OnInit, OnDestroy {
 
     });
 
-
-
     /**
      * Watch re-render-refresh for updating db
      */
@@ -320,9 +318,26 @@ export class CalendarComponent implements OnInit, OnDestroy {
         }
         //----------------------------//Notificar Estado de Transaccion a Cita//-------------//
 
-        let jsonParams: any = JSON.stringify(params);
+        try {
+          const queryParamsObject = {};
+          for (const key in params) {
+            if (params.hasOwnProperty(key)) {
+              queryParamsObject[key] = encodeURIComponent(params[key]);
+            }
+          }
+      
+          // Convertir el objeto a JSON
+          const jsonParams = JSON.stringify(queryParamsObject);
 
-        this.CreateTransaction(jsonParams);
+         // let jsonParams = decodeURIComponent(params.queryParams.toString());
+
+          console.log('Pruebas AAA : '+ jsonParams);
+
+          this.CreateTransaction(queryParamsObject);
+
+        } catch (error) {
+          console.log("No se pudo analizar la cadena JSON: "+ error);
+        }
 
       } else {
         console.log('No Tiene informacion queryParams');
@@ -347,6 +362,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
     this.horizontalStepperStep3.controls["disciplina"].setValue(retrievedData.disciplina);
     this.horizontalStepperStep3.controls["canal"].setValue(retrievedData.canalId);
     this.verticalStepperStep2.controls["documentType"].setValue(retrievedData.typeDoc);
+    //this.verticalStepperStep2.controls["documentType"].setValue(45980159);
     this.verticalStepperStep2.controls["name"].setValue(retrievedData.nombres);
     this.verticalStepperStep2.controls["lastName"].setValue(retrievedData.apellidos);
     this.verticalStepperStep2.controls["email"].setValue(retrievedData.correo);
@@ -355,24 +371,36 @@ export class CalendarComponent implements OnInit, OnDestroy {
     this.consultorio = parseInt(retrievedData.idDispo);
     this.citaId = retrievedData.idCita;
     this.id = retrievedData.idCliente;
+    //-----------------------------------//Pagina de COnfirmacion//--------------------//
+
+    this.docu = retrievedData.pcTypDoc; //TypeDoc
+    this.docNumber = retrievedData.numeroDoc;
+    this.nombre = retrievedData.nombres;
+    this.apellido = retrievedData.apellidos;
+    this.tel = retrievedData.phone;
+    this.fechaFacke = retrievedData.pcFechaCita;
+    this.observaciones = retrievedData.observac;
+
+    ///Eliminar validacion campo ciudad paso 3.
+    this.disabledCiudad = retrievedData.canalId === 46051562 ? true : false;
+    this.horizontalStepperStep3.get("ciudad").clearValidators();
+    this.horizontalStepperStep3.get("ciudad").updateValueAndValidity();
+    this.disastep = false;
 
     this.findByCC();
-    this.disastep = false;
 
     //sessionStorage.removeItem('dataClient');
   }
 
   CreateTransaction(dataTransac: any) {
 
-    console.log('JSON Data: ' + dataTransac);
-
-    let _idCita,_idTransac: Number = 0;
+    console.log('JSON Data Create: ' + dataTransac);
 
     let dataJSON: any = {
-      jsonInfo:String(dataTransac),
+      jsonInfo: JSON.stringify(dataTransac),
       transactionId: dataTransac.transactionId,
-      idCita:dataTransac.idCita,
-      idClient: dataTransac.idCliente
+      idCita: this.citaId,
+      idClient: this.id
     };
 
     this._calendarService.CreateTransaccion(dataJSON).subscribe(
@@ -635,6 +663,20 @@ export class CalendarComponent implements OnInit, OnDestroy {
         icon: "info",
       });
     }
+
+    if(event.value === 46051562){
+
+      Swal.fire({
+        title: `Las consultas en modalidad virtual tienen un costo de 140.000$ si no tienes un proceso activo`,
+        icon: "warning", focusConfirm: true, confirmButtonText: 'Continuar'
+      }).then((result) => {
+        if (result.isConfirmed) {
+          this.PayURequest();
+        }
+      })
+
+    }
+
     console.log('canal de atencion', event);
     console.log('canal de atencion', event.value);
     if (event.value !== 46051562) {
@@ -660,29 +702,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
   public requestPaciente(fecha) {
     this.fecha = fecha;
     this.fechaFacke = moment(fecha).locale("es").format("DD/MM/YYYY hh:mm:ss");
-    /*this._calendarService.getPacienteByCC(cc).subscribe((data) => {
-            if (data) {
-                const docName = this.docType.filter(x => x.id == data[0].tipoDoc);
-                this.verticalStepperStep2.controls['id'].setValue(data[0].id);
-                this.verticalStepperStep2.controls['documentType'].setValue(docName[0].name);
-                this.verticalStepperStep2.controls['document'].setValue(cc);
-                this.verticalStepperStep2.controls['name'].setValue(data[0].nombre);
-                this.verticalStepperStep2.controls['lastName'].setValue(data[0].apellido);
-                this.verticalStepperStep2.controls['position'].setValue(data[0].cargo);
-                this.verticalStepperStep2.controls['phone'].setValue(data[0].celular);
-                this.verticalStepperStep2.controls['email'].setValue(data[0].email);
-            }
-        }, (err) => {
-            this.verticalStepperStep2.controls['id'].setValue('');
-            this.verticalStepperStep2.controls['documentType'].setValue('');
-            this.verticalStepperStep2.controls['document'].setValue(cc);
-            this.verticalStepperStep2.controls['name'].setValue('');
-            this.verticalStepperStep2.controls['lastName'].setValue('');
-            this.verticalStepperStep2.controls['position'].setValue('');
-            this.verticalStepperStep2.controls['phone'].setValue('');
-            this.verticalStepperStep2.controls['email'].setValue('');
-            console.log("Error rec" + JSON.stringify(err));
-        }); */
+
   }
 
   public findByCC() {
@@ -698,6 +718,7 @@ export class CalendarComponent implements OnInit, OnDestroy {
             this.getAttentionChannel();
             this.loadCiudades();
           } else { //Solo traer los datos de las listas estaticas 
+            this.docType = data;
             this.getTypeOfRelationship();
             this.getCitysClient();
             this.getAttentionChannel();
@@ -712,6 +733,11 @@ export class CalendarComponent implements OnInit, OnDestroy {
         }
       );
     });
+  }
+
+  public filtrarOpciones(inputValue: string): string[] {
+    const filtro = inputValue.toLowerCase();
+    return this.citysClient.filter(opcion => opcion.toLowerCase().includes(filtro));
   }
 
   public searchByCC() {
@@ -841,9 +867,8 @@ export class CalendarComponent implements OnInit, OnDestroy {
           .subscribe(
             (data) => {
               if (data) {
-                this.crearCita(this.id);
-                this.PayURequest();
                 this.stepper.next();
+                this.crearCita(this.id);
               }
             },
             (err) => {
@@ -867,9 +892,9 @@ export class CalendarComponent implements OnInit, OnDestroy {
             (data) => {
               if (data) {
                 //console.log(data);
-                this.id=data.id;
+                this.id = data.id;
+                this.stepper.next();
                 this.crearCita(this.id);
-                this.PayURequest();
                 //alert('Se registró la cita con éxito!');
                 //this.router.navigateByUrl('/pages/login');
               }
@@ -910,16 +935,24 @@ export class CalendarComponent implements OnInit, OnDestroy {
               this.updateDisponibilidad(this.consultorio);
             }
           }
-          await Swal.fire({
+          var isVirt: boolean = this.horizontalStepperStep3.controls["canal"].value == 46051562 ? true : false;
+
+          await isVirt ? Swal.fire({
+            title: `Se ha creado una solicitud de consulta, debes efectuar el pago de la consulta para poder recibir la atencion
+            si el pago no es registrado en las ultimas 2 horas, su solicitud de consulta sera rechazada`,
+            icon: "success", focusConfirm: true, confirmButtonText: 'Continuar con Pago'
+          }).then((result) => {
+            if (result.isConfirmed) {
+              this.PayURequest();
+            }
+          }) : Swal.fire({
             title: `Su cita ha sido agendada correctamente`,
             icon: "success",
-          });
+          })
+          this.payProcess = true; //Esto para que cierre el proceso de agendamiento.
           console.log("data rec" + data);
         },
         async (err) => {
-          // this._snackBar.open(err.error.message, "X", {
-          //   duration: 10000,
-          // });
           console.log("Error rec" + JSON.stringify(err));
           await Swal.fire({
             title: `${err?.error?.message}`,
@@ -1245,7 +1278,11 @@ export class CalendarComponent implements OnInit, OnDestroy {
       observac: this.horizontalStepperStep3.controls["observaciones"].value,
       idDisponi: this.consultorio,
       idCita: this.citaId,
-      idCliente: this.id
+      idCliente: this.id,
+      //-----------------------//Datos Pagina Confirmacion//-------------------------//
+      pcTypDoc: this.docu,
+      pcFechaCita: this.fechaFacke
+
     }; // Objeto con múltiples valores a guardar
     sessionStorage.setItem('dataClient', JSON.stringify(data)); // Guardar el objeto en el sessionStorage
   }

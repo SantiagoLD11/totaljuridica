@@ -46,6 +46,7 @@
 
             <div fxLayout="row" fxLayoutAlign="center center">
               <button
+                [disabled]="payProcess"
                 mat-raised-button
                 type="button"
                 (click)="findByCC()"
@@ -143,6 +144,7 @@
 
             <div fxLayout="row" fxLayoutAlign="center center">
               <button
+                [disabled]="payProcess"
                 class="mr-8"
                 mat-raised-button
                 matStepperPrevious
@@ -152,6 +154,7 @@
                 Anterior
               </button>
               <button
+                [disabled]="payProcess"
                 mat-raised-button
                 matStepperNext
                 type="button"
@@ -202,7 +205,7 @@
 
               <mat-form-field appearance="outline" fxFlex="100">
                 <mat-label>Ciudad</mat-label>
-                <mat-select formControlName="ciudad" required [disabled]="disabledCiudad">
+                <mat-select formControlName="ciudad" [disabled]="disabledCiudad">
                   <mat-option
                     *ngFor="let ciudad of ciudades"
                     [value]="ciudad.id"
@@ -223,6 +226,7 @@
 
             <div fxLayout="row" fxLayoutAlign="center center">
               <button
+                [disabled]="payProcess"
                 mat-raised-button
                 type="button"
                 color="accent"
@@ -412,6 +416,7 @@
             <br />
             <div fxLayout="row" fxLayoutAlign="center center">
               <button
+                [disabled]="payProcess"
                 class="mr-8"
                 mat-raised-button
                 matStepperPrevious
@@ -421,6 +426,7 @@
                 Anterior
               </button>
               <button
+                [disabled]="payProcess"
                 mat-raised-button
                 type="button"
                 [disabled]="btnCalendar"

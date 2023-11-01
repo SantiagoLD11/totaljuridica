@@ -446,7 +446,7 @@ export class CalendarService implements Resolve<any> {
   public CreateTransaccion(Json:any) : Observable<any> {
     // R48030298 =id Paciente/Ciudadano..
     // R48045115 = id Cita
-    let params = `JSON_transacc=${Json.jsonInfo}&R48030298=${Json.idClient}&R48045115=${Json.idCita}&transactionId=${Json.transactionId}`;
+    let params = `R48030298=${Json.idClient}&R48045115=${Json.idCita}&transactionId=${Json.transactionId}&JSON_transacc=${Json.jsonInfo}`;
     var command = `create2?output=json&objName=Transacciones&${params}`;
     //console.log(command);
     return this.postActionError(command);
